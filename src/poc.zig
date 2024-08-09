@@ -198,6 +198,18 @@ const Json = struct {
             defer ctx.allocator.?.free(content);
             try ctx.write(content);
         }
+
+        pub fn lower_and_upper(value: std.json.Value, ctx: mustache.LambdaContext) !void {
+            std.debug.assert(std.meta.activeTag(value) == .string);
+            try ctx.write(value.string);
+            const content = try ctx.renderAlloc(ctx.allocator.?, ctx.inner_text);
+            defer ctx.allocator.?.free(content);
+            for (content, 0..) |char, i| {
+                content[i] = std.ascii.toUpper(char);
+            }
+            try ctx.write(" ");
+            try ctx.write(content);
+        }
     };
 
     test "section: only LambdaContext" {
@@ -229,6 +241,22 @@ const Json = struct {
         defer allocator.free(result);
 
         try std.testing.expectEqualStrings(json_upper_text, result);
+        try ok(@src().fn_name);
+    }
+
+    test "section: struct + LambdaContext" {
+        const template = "{{#lower_and_upper}}" ++ lower_text ++ "{{/lower_and_upper}}";
+        const value = std.json.Value{ .string = json_text };
+
+        const result = try mustache.allocRenderTextWithOptions(
+            allocator,
+            template,
+            value,
+            .{ .global_lambdas = GlobalLambdas },
+        );
+        defer allocator.free(result);
+
+        try std.testing.expectEqualStrings(json_text ++ " " ++ upper_text, result);
         try ok(@src().fn_name);
     }
 };

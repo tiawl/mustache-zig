@@ -73,9 +73,12 @@ pub fn InvokerType(
                     const Data = @TypeOf(data);
                     if (Data == void) return .chain_broken;
 
-                    const ctx = Fields.getRuntimeValue(data);
+                    var ctx = Fields.getRuntimeValue(data);
 
                     if (comptime lambda.isLambdaInvoker(if (DataRender.GlobalLambdas == Data) UserData else Data)) {
+                        if (@TypeOf(ctx.data) == std.json.Value) {
+                            ctx.data = data_render.stack.ctx.ctx.get(UserData);
+                        }
                         return PathResolution{ .lambda = try action_fn(action_param, data_render, ctx) };
                     } else {
                         if (path.len > 0) {

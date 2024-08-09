@@ -897,8 +897,29 @@ pub fn RenderEngineType(
                                             assert(section.inner_text != null);
                                             assert(section.delimiters != null);
 
+                                            const native_data_render: *NativeDataRender = @ptrCast(self);
+
+                                            if (self.stack_global_lambdas != null) {
+                                                switch (context_source) {
+                                                    .json => {
+                                                        const ctx: NativeContext = .{
+                                                            .vtable = native_data_render.stack.ctx.vtable,
+                                                            .ctx = native_context.ErasedType.put(self.stack.ctx.ctx),
+                                                        };
+
+                                                        const context_stack = NativeContext.ContextStack{
+                                                            .parent = @ptrCast(@alignCast(self.stack.parent)),
+                                                            .ctx = ctx,
+                                                        };
+
+                                                        native_data_render.stack = &context_stack;
+                                                    },
+                                                    else => {},
+                                                }
+                                            }
+
                                             const expand_result = try lambda_ctx.expandLambda(
-                                                @ptrCast(self),
+                                                native_data_render,
                                                 &.{},
                                                 section.inner_text.?,
                                                 .Unescaped,
