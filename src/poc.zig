@@ -210,6 +210,18 @@ const Json = struct {
             try ctx.write(" ");
             try ctx.write(content);
         }
+
+        pub fn lower_and_upper_obj(value: std.json.Value, ctx: mustache.LambdaContext) !void {
+            std.debug.assert(std.meta.activeTag(value) == .object);
+            try ctx.write(value.object.get("name").?.string);
+            const content = try ctx.renderAlloc(ctx.allocator.?, ctx.inner_text);
+            defer ctx.allocator.?.free(content);
+            for (content, 0..) |char, i| {
+                content[i] = std.ascii.toUpper(char);
+            }
+            try ctx.write(" ");
+            try ctx.write(content);
+        }
     };
 
     test "section: only LambdaContext" {
@@ -261,7 +273,7 @@ const Json = struct {
     }
 
     test "section 2: struct + LambdaContext" {
-        const template = "{{#lower_and_upper}}{{name}}{{/lower_and_upper}}";
+        const template = "{{#lower_and_upper_obj}}{{name}}{{/lower_and_upper_obj}}";
         const source =
             \\{
             \\    "name": "friends"
