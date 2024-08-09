@@ -259,6 +259,34 @@ const Json = struct {
         try std.testing.expectEqualStrings(json_text ++ " " ++ upper_text, result);
         try ok(@src().fn_name);
     }
+
+    test "section 2: struct + LambdaContext" {
+        const template = "{{#lower_and_upper}}{{name}}{{/lower_and_upper}}";
+        const source =
+            \\{
+            \\    "name": "friends"
+            \\}
+        ;
+
+        const parsed = try std.json.parseFromSlice(
+            std.json.Value,
+            allocator,
+            source,
+            .{}
+        );
+        defer parsed.deinit();
+
+        const result = try mustache.allocRenderTextWithOptions(
+            allocator,
+            template,
+            parsed.value,
+            .{ .global_lambdas = GlobalLambdas },
+        );
+        defer allocator.free(result);
+
+        try std.testing.expectEqualStrings("friends FRIENDS", result);
+        try ok(@src().fn_name);
+    }
 };
 
 test {
